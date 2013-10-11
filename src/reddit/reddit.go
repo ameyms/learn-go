@@ -3,7 +3,9 @@ package reddit
 import (
  "net/http"
   "log"
+  "fmt"
   "encoding/json"
+  "errors"
 )
 
 // Wraps the complete response of the reddit API
@@ -19,6 +21,11 @@ type Response struct {
 type Item struct {
   Title string
   URL string
+  Comments int `json:"num_comments"`
+}
+
+func (i Item) String() string {
+  return fmt.Sprintf("%s (%d)\n%s", i.Title, i.Comments, i.URL)
 }
 
 func Read(topic string) (*Response, error) {
@@ -27,9 +34,12 @@ func Read(topic string) (*Response, error) {
     log.Fatal(err)
     return nil, err
   }
+  //Cleanup our http response object
+  defer r.Body.Close()
+
   if r.StatusCode != http.StatusOK {
     log.Fatal(r.Status)
-    return nil, err
+    return nil, errors.New(r.Status)
   }
 
   resp := new(Response)
